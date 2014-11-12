@@ -75,9 +75,9 @@ if (!file.exists(fileRData)) {
     dateDownloaded &lt;- date()
     
     # load the training data
-    trainData &lt;- read.csv(&quot;data/pml-training.csv&quot;, na.strings=c(&quot;NA&quot;,&quot;&quot;))
+    trainData &lt;- read.csv(&quot;data/pml-training.csv&quot;, na.strings=c(&quot;&lt;NA&gt;&quot;, &quot;NA&quot;,&quot;&quot;))
     # load the testing data
-    testData &lt;- read.csv(&quot;data/pml-testing.csv&quot;, na.strings=c(&quot;NA&quot;,&quot;&quot;))
+    testData &lt;- read.csv(&quot;data/pml-testing.csv&quot;, na.strings=c(&quot;&lt;NA&gt;&quot;, &quot;NA&quot;,&quot;&quot;))
     
     # save the data to and R object. This ensures that if the source data is deleted or altered the results are reproducable.
     save(dateDownloaded, trainData, testData, file = fileRData)
@@ -85,10 +85,110 @@ if (!file.exists(fileRData)) {
     load(file = fileRData)
     print(paste0(&quot;Using data originally downloaded on the &quot;, dateDownloaded))
 }</code></pre>
-<pre><code>## [1] &quot;Using data originally downloaded on the Wed Nov 12 09:09:35 2014&quot;</code></pre>
+<pre><code>## [1] &quot;Using data originally downloaded on the Wed Nov 12 11:45:00 2014&quot;</code></pre>
 <div id="the-training-data" class="section level1">
 <h1>The training data</h1>
 <p>The data consisted of a large number of fields containing NA and <em>null</em> values. These have been set to appear as NA values. The training data is made up of 19622 rows and 160.</p>
+<pre class="r"><code># set the seed for reproducability
+set.seed(123)
+
+# load the libraries
+library(caret)</code></pre>
+<pre><code>## Loading required package: lattice
+## Loading required package: ggplot2</code></pre>
+<pre class="r"><code>library(randomForest)</code></pre>
+<pre><code>## randomForest 4.6-10
+## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+</div>
+<div id="cleaning-the-data" class="section level1">
+<h1>Cleaning the data</h1>
+<p>Cleaning the data serves the following purposes: * It makes analysing the data more efficient in terms of processing speed;<br />* It allows one to get a better understanding of the problem at hand; * It makes it easier to figure out those columns that can be used as predictor variables and improves accuracy of the model.</p>
+<p>The first 6 columns of the data consists of data that will not contribute to the analysis. These have been removed.</p>
+<pre class="r"><code>trainData &lt;- trainData[, -(1:6)]</code></pre>
+<pre class="r"><code>nzv &lt;- nearZeroVar(trainData)
+trainData &lt;- trainData[, -nzv]</code></pre>
+<p>In order to better be able to process the data those columns whose data does not change appreciably will be removed. These columns do not contribute appreciably to the model. 42 columns were removed from the original data.</p>
+<p>Given that many fields consists of NAs these will be removed if they account to 80% or more of the data in that column.</p>
+<pre class="r"><code>threshold &lt;- nrow(trainData) * 0.80
+trainData &lt;- trainData[sapply(trainData, function(x) sum(is.na(x)) &lt; threshold)]</code></pre>
+<p>In the end we have a data frame having the following dimensions <code>{r dim(trainData)}</code>.</p>
+</div>
+<div id="data-analysis" class="section level1">
+<h1>Data Analysis</h1>
+<p>The training data was split into two groups: * training (70% of the original data) * cross validation (remaining 30%)</p>
+<pre class="r"><code># split the cleaned testing data into training and cross validation
+inTrain &lt;- createDataPartition(y = trainData$classe, p = 0.7, list = FALSE)
+trainData.train &lt;- trainData[inTrain, ]
+trainData.crossval &lt;- trainData[-inTrain, ] </code></pre>
+<p>Random forests was selected because this method generates a large number of bootstrapped trees, classifying a case using each tree in this new “forest”, and deciding a final predicted outcome by combining the results across all of the trees.</p>
+<p>Then a model was fitted with the outcome set to classe and all the other variables used as predictors.</p>
+<pre class="r"><code># fit a model to predict the classe using everything else as a predictor
+model &lt;- randomForest(classe ~ ., data = trainData.train)
+model</code></pre>
+<pre><code>## 
+## Call:
+##  randomForest(formula = classe ~ ., data = trainData.train) 
+##                Type of random forest: classification
+##                      Number of trees: 500
+## No. of variables tried at each split: 7
+## 
+##         OOB estimate of  error rate: 0.32%
+## Confusion matrix:
+##      A    B    C    D    E  class.error
+## A 3905    0    0    0    1 0.0002560164
+## B    7 2649    2    0    0 0.0033860045
+## C    0   12 2383    1    0 0.0054257095
+## D    0    0   17 2234    1 0.0079928952
+## E    0    0    0    3 2522 0.0011881188</code></pre>
+<p>The OOB (Out of Bag) estimate of 0.31% was deemed acceptable.</p>
+<p>This model was used on the cross validation data. This would help verify its accuracy.</p>
+<pre class="r"><code>predict.crossval &lt;- predict(model, trainData.crossval)
+confusionMatrix(trainData.crossval$classe, predict.crossval)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction    A    B    C    D    E
+##          A 1674    0    0    0    0
+##          B    0 1139    0    0    0
+##          C    0    8 1018    0    0
+##          D    0    0   10  953    1
+##          E    0    0    0    0 1082
+## 
+## Overall Statistics
+##                                          
+##                Accuracy : 0.9968         
+##                  95% CI : (0.995, 0.9981)
+##     No Information Rate : 0.2845         
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
+##                                          
+##                   Kappa : 0.9959         
+##  Mcnemar's Test P-Value : NA             
+## 
+## Statistics by Class:
+## 
+##                      Class: A Class: B Class: C Class: D Class: E
+## Sensitivity            1.0000   0.9930   0.9903   1.0000   0.9991
+## Specificity            1.0000   1.0000   0.9984   0.9978   1.0000
+## Pos Pred Value         1.0000   1.0000   0.9922   0.9886   1.0000
+## Neg Pred Value         1.0000   0.9983   0.9979   1.0000   0.9998
+## Prevalence             0.2845   0.1949   0.1747   0.1619   0.1840
+## Detection Rate         0.2845   0.1935   0.1730   0.1619   0.1839
+## Detection Prevalence   0.2845   0.1935   0.1743   0.1638   0.1839
+## Balanced Accuracy      1.0000   0.9965   0.9943   0.9989   0.9995</code></pre>
+<p>The model returned a 99.7% pedicition accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.</p>
+<div id="predictions" class="section level3">
+<h3>Predictions</h3>
+<p>The model will be applied to the test data set loaded earlier.</p>
+<pre class="r"><code>predictTest &lt;- predict(model, testData)
+predictTest</code></pre>
+<pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
+##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
+## Levels: A B C D E</code></pre>
+</div>
+<div id="conclusions" class="section level3">
+<h3>Conclusions</h3>
+<p>The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available.</p>
+</div>
 </div>
 
 
