@@ -1,0 +1,81 @@
+---
+title: "Practical Machine Learning Project"
+author: "Alan C Bonnici"
+date: "Wednesday, November 12, 2014"
+output: html_document
+---
+
+Assignment
+
+The goal is this project is to predict the manner in which users of devices such as the *Jawbone Up*, *Nike FuelBand*, and *Fitbit* did exercise. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways was utilised. The data and further information about the source of this data was obtained from the website: [http://groupware.les.inf.puc-rio.br/har] (see the section on the Weight Lifting Exercise Dataset). The training and testing data were downloaded from [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv] and [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv] respectivley.
+
+The assignment is to create a report describing how the model was built, how cross validation was used, and the expected out of sample error. Also included are the choices that led to the conclusions.
+
+Getting and Cleaning Data
+
+```{r}
+if (!file.exists("data")) {
+    dir.create("data")
+}
+
+fileRData <- "data/predmachlearn-007.RData"
+if (!file.exists(fileRData)) {
+    for (fileUrl in c("https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")) {
+        download.file(fileUrl, paste0("data/",basename(fileUrl)))
+    }
+    
+    dateDownloaded <- date()
+    
+    # load the training data
+    trainData <- read.csv("data/pml-training.csv", na.strings=c("<NA>", "NA",""))
+    # load the testing data
+    testData <- read.csv("data/pml-testing.csv", na.strings=c("<NA>", "NA",""))
+    
+    # save the data to and R object. This ensures that if the source data is deleted or altered the results are reproducable.
+    save(dateDownloaded, trainData, testData, file = fileRData)
+} else {
+    load(file = fileRData)
+    print(paste0("Using data originally downloaded on the ", dateDownloaded))
+}
+```
+
+# The training data
+
+The data consisted of a large number of fields containing NA and *null* values. These have been set to appear as NA values. The training data is made up of `r nrow(trainData)` rows and `r ncol(trainData)`.  
+
+```{r}
+# set the seed for reproducability
+set.seed(123)
+
+# load the libraries
+library(caret)
+```
+
+# Cleaning the data
+
+Cleaning the data serves the following purposes:
+* It makes analysing the data more efficient in terms of processing speed;  
+* It allows one to get a better understanding of the problem at hand;
+* It makes it easier to figure out those columns that can be used as predictor variables and improves accuracy of the model.
+
+The first 2 columns of the data consists of textual data that will not contribute tot he analysis. These have been removed.
+
+```{r}
+trainData <- trainData[, -(1:2)]
+```
+
+
+```{r}
+nzv <- nearZeroVar(trainData)
+trainData <- trainData[, -nzv]
+```
+
+In order to better be able to process the data those columns whose data does not change appreciably will be removed. These columns do not contribute appreciably to the model. `r length(nzv)` columns were removed from the original data.
+
+Given that many fields consists of NAs these will be removed if they account to more than 80% of the data in that column.
+
+```{r}
+threshold <- nrow(trainData) * 0.80
+colsNA <- sapply(trainData, function(x) { sum(is.na(x)) > threshold})
+trainData <- trainData[, -colsNA]
+```
