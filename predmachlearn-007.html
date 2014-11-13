@@ -99,12 +99,17 @@ library(caret)</code></pre>
 <pre class="r"><code>library(randomForest)</code></pre>
 <pre><code>## randomForest 4.6-10
 ## Type rfNews() to see new features/changes/bug fixes.</code></pre>
+<pre class="r"><code>library(rpart)
+library(rattle)</code></pre>
+<pre><code>## Rattle: A free graphical interface for data mining with R.
+## Version 3.3.0 Copyright (c) 2006-2014 Togaware Pty Ltd.
+## Type 'rattle()' to shake, rattle, and roll your data.</code></pre>
 </div>
 <div id="cleaning-the-data" class="section level1">
 <h1>Cleaning the data</h1>
-<p>Cleaning the data serves the following purposes: * It makes analysing the data more efficient in terms of processing speed;<br />* It allows one to get a better understanding of the problem at hand; * It makes it easier to figure out those columns that can be used as predictor variables and improves accuracy of the model.</p>
-<p>The first 6 columns of the data consists of data that will not contribute to the analysis. These have been removed.</p>
-<pre class="r"><code>trainData &lt;- trainData[, -(1:6)]</code></pre>
+<p>Cleaning the data serves the following purposes:<br />* It makes analysing the data more efficient in terms of processing speed;<br />* It allows one to get a better understanding of the problem at hand;<br />* It makes it easier to figure out those columns that can be used as predictor variables and improves accuracy of the model.</p>
+<p>The first 7 columns of the data consists of data that will not contribute to the analysis. These have been removed.</p>
+<pre class="r"><code>trainData &lt;- trainData[, -(1:7)]</code></pre>
 <pre class="r"><code>nzv &lt;- nearZeroVar(trainData)
 trainData &lt;- trainData[, -nzv]</code></pre>
 <p>In order to better be able to process the data those columns whose data does not change appreciably will be removed. These columns do not contribute appreciably to the model. 42 columns were removed from the original data.</p>
@@ -115,16 +120,18 @@ trainData &lt;- trainData[sapply(trainData, function(x) sum(is.na(x)) &lt; thres
 </div>
 <div id="data-analysis" class="section level1">
 <h1>Data Analysis</h1>
-<p>The training data was split into two groups: * training (70% of the original data) * cross validation (remaining 30%)</p>
+<p>The training data was split into two groups:<br />* training (70% of the original data)<br />* cross validation (remaining 30%)</p>
 <pre class="r"><code># split the cleaned testing data into training and cross validation
 inTrain &lt;- createDataPartition(y = trainData$classe, p = 0.7, list = FALSE)
 trainData.train &lt;- trainData[inTrain, ]
 trainData.crossval &lt;- trainData[-inTrain, ] </code></pre>
+<div id="random-forest-analysis" class="section level2">
+<h2>Random Forest Analysis</h2>
 <p>Random forests was selected because this method generates a large number of bootstrapped trees, classifying a case using each tree in this new “forest”, and deciding a final predicted outcome by combining the results across all of the trees.</p>
 <p>Then a model was fitted with the outcome set to classe and all the other variables used as predictors.</p>
 <pre class="r"><code># fit a model to predict the classe using everything else as a predictor
-model &lt;- randomForest(classe ~ ., data = trainData.train)
-model</code></pre>
+modFitRF &lt;- randomForest(classe ~ ., data = trainData.train)
+modFitRF</code></pre>
 <pre><code>## 
 ## Call:
 ##  randomForest(formula = classe ~ ., data = trainData.train) 
@@ -132,54 +139,54 @@ model</code></pre>
 ##                      Number of trees: 500
 ## No. of variables tried at each split: 7
 ## 
-##         OOB estimate of  error rate: 0.32%
+##         OOB estimate of  error rate: 0.58%
 ## Confusion matrix:
 ##      A    B    C    D    E  class.error
-## A 3905    0    0    0    1 0.0002560164
-## B    7 2649    2    0    0 0.0033860045
-## C    0   12 2383    1    0 0.0054257095
-## D    0    0   17 2234    1 0.0079928952
-## E    0    0    0    3 2522 0.0011881188</code></pre>
-<p>The OOB (Out of Bag) estimate of 0.31% was deemed acceptable.</p>
+## A 3904    2    0    0    0 0.0005120328
+## B   11 2640    7    0    0 0.0067720090
+## C    0   17 2375    4    0 0.0087646077
+## D    0    0   26 2225    1 0.0119893428
+## E    0    0    3    9 2513 0.0047524752</code></pre>
+<p>The OOB (Out of Bag) estimate of 0.32% was deemed acceptable.</p>
 <p>This model was used on the cross validation data. This would help verify its accuracy.</p>
-<pre class="r"><code>predict.crossval &lt;- predict(model, trainData.crossval)
+<pre class="r"><code>predict.crossval &lt;- predict(modFitRF, trainData.crossval)
 confusionMatrix(trainData.crossval$classe, predict.crossval)</code></pre>
 <pre><code>## Confusion Matrix and Statistics
 ## 
 ##           Reference
 ## Prediction    A    B    C    D    E
-##          A 1674    0    0    0    0
-##          B    0 1139    0    0    0
-##          C    0    8 1018    0    0
-##          D    0    0   10  953    1
+##          A 1673    1    0    0    0
+##          B    5 1134    0    0    0
+##          C    0   11 1015    0    0
+##          D    0    0   15  948    1
 ##          E    0    0    0    0 1082
 ## 
 ## Overall Statistics
-##                                          
-##                Accuracy : 0.9968         
-##                  95% CI : (0.995, 0.9981)
-##     No Information Rate : 0.2845         
-##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16      
-##                                          
-##                   Kappa : 0.9959         
-##  Mcnemar's Test P-Value : NA             
+##                                           
+##                Accuracy : 0.9944          
+##                  95% CI : (0.9921, 0.9961)
+##     No Information Rate : 0.2851          
+##     P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+##                                           
+##                   Kappa : 0.9929          
+##  Mcnemar's Test P-Value : NA              
 ## 
 ## Statistics by Class:
 ## 
 ##                      Class: A Class: B Class: C Class: D Class: E
-## Sensitivity            1.0000   0.9930   0.9903   1.0000   0.9991
-## Specificity            1.0000   1.0000   0.9984   0.9978   1.0000
-## Pos Pred Value         1.0000   1.0000   0.9922   0.9886   1.0000
-## Neg Pred Value         1.0000   0.9983   0.9979   1.0000   0.9998
-## Prevalence             0.2845   0.1949   0.1747   0.1619   0.1840
-## Detection Rate         0.2845   0.1935   0.1730   0.1619   0.1839
+## Sensitivity            0.9970   0.9895   0.9854   1.0000   0.9991
+## Specificity            0.9998   0.9989   0.9977   0.9968   1.0000
+## Pos Pred Value         0.9994   0.9956   0.9893   0.9834   1.0000
+## Neg Pred Value         0.9988   0.9975   0.9969   1.0000   0.9998
+## Prevalence             0.2851   0.1947   0.1750   0.1611   0.1840
+## Detection Rate         0.2843   0.1927   0.1725   0.1611   0.1839
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1638   0.1839
-## Balanced Accuracy      1.0000   0.9965   0.9943   0.9989   0.9995</code></pre>
+## Balanced Accuracy      0.9984   0.9942   0.9916   0.9984   0.9995</code></pre>
 <p>The model returned a 99.7% pedicition accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.</p>
 <div id="predictions" class="section level3">
 <h3>Predictions</h3>
 <p>The model will be applied to the test data set loaded earlier.</p>
-<pre class="r"><code>predictTest &lt;- predict(model, testData)
+<pre class="r"><code>predictTest &lt;- predict(modFitRF, testData)
 predictTest</code></pre>
 <pre><code>##  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 
 ##  B  A  B  A  A  E  D  B  A  A  B  C  B  A  E  E  A  B  B  B 
@@ -188,6 +195,20 @@ predictTest</code></pre>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>
 <p>The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available.</p>
+</div>
+</div>
+<div id="prediction-assignment-submission" class="section level2">
+<h2>Prediction Assignment Submission</h2>
+<p>The predictions will be written to text files for submission to Coursera.</p>
+<pre class="r"><code>pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0(&quot;data/problem_id_&quot;,i,&quot;.txt&quot;)
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(predictTest)</code></pre>
 </div>
 </div>
 

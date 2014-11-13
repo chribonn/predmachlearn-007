@@ -50,6 +50,8 @@ set.seed(123)
 # load the libraries
 library(caret)
 library(randomForest)
+library(rpart)
+library(rattle)
 ```
 
 # Cleaning the data
@@ -59,10 +61,10 @@ Cleaning the data serves the following purposes:
 * It allows one to get a better understanding of the problem at hand;  
 * It makes it easier to figure out those columns that can be used as predictor variables and improves accuracy of the model.
 
-The first 6 columns of the data consists of data that will not contribute to the analysis. These have been removed.
+The first 7 columns of the data consists of data that will not contribute to the analysis. These have been removed.
 
 ```{r}
-trainData <- trainData[, -(1:6)]
+trainData <- trainData[, -(1:7)]
 ```
 
 ```{r}
@@ -94,14 +96,15 @@ trainData.train <- trainData[inTrain, ]
 trainData.crossval <- trainData[-inTrain, ] 
 ```
 
+## Random Forest Analysis
 Random forests was selected because this method generates a large number of bootstrapped trees, classifying a case using each tree in this new "forest", and deciding a final predicted outcome by combining the results across all of the trees.
 
 Then a model was fitted with the outcome set to classe and all the other variables used as predictors.
 
 ```{r}
 # fit a model to predict the classe using everything else as a predictor
-model <- randomForest(classe ~ ., data = trainData.train)
-model
+modFitRF <- randomForest(classe ~ ., data = trainData.train)
+modFitRF
 ```
 
 The OOB (Out of Bag) estimate of 0.32% was deemed acceptable.
@@ -109,7 +112,7 @@ The OOB (Out of Bag) estimate of 0.32% was deemed acceptable.
 This model was used on the cross validation data. This would help verify its accuracy.
 
 ```{r}
-predict.crossval <- predict(model, trainData.crossval)
+predict.crossval <- predict(modFitRF, trainData.crossval)
 confusionMatrix(trainData.crossval$classe, predict.crossval)
 ```
 
@@ -119,9 +122,25 @@ The model returned a 99.7% pedicition accuracy and a 99.6% Kappa coefficient. Th
 The model will be applied to the test data set loaded earlier.
 
 ```{r}
-predictTest <- predict(model, testData)
+predictTest <- predict(modFitRF, testData)
 predictTest
 ```
 
 ### Conclusions
-The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available.  
+The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available. 
+
+## Prediction Assignment Submission
+
+The predictions will be written to text files for submission to Coursera.
+
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("data/problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+
+pml_write_files(predictTest)
+```
