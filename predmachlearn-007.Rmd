@@ -7,7 +7,7 @@ output: html_document
 
 Assignment
 
-The goal is this project is to predict the manner in which users of devices such as the *Jawbone Up*, *Nike FuelBand*, and *Fitbit* did exercise. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways was utilised. The data and further information about the source of this data was obtained from the website: [http://groupware.les.inf.puc-rio.br/har] (see the section on the Weight Lifting Exercise Dataset). The training and testing data were downloaded from [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv] and [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv] respectivley.
+The goal is this project is to predict the manner in which users of devices such as the *Jawbone Up*, *Nike FuelBand*, and *Fitbit* did exercise. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways was utilised. The data and further information about the source of this data was obtained from the website: [http://groupware.les.inf.puc-rio.br/har] (see the section on the Weight Lifting Exercise Dataset). The training and testing data were downloaded from [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv] and [https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv] respectively.
 
 The assignment is to create a report describing how the model was built, how cross validation was used, and the expected out of sample error. Also included are the choices that led to the conclusions.
 
@@ -50,8 +50,6 @@ set.seed(123)
 # load the libraries
 library(caret)
 library(randomForest)
-library(rpart)
-library(rattle)
 ```
 
 # Cleaning the data
@@ -87,13 +85,13 @@ In the end we have a data frame having the following dimensions `{r dim(trainDat
 
 The training data was split into two groups:  
 * training (70% of the original data)  
-* cross validation (remaining 30%)
+* validation (remaining 30%)
 
 ```{r}
 # split the cleaned testing data into training and cross validation
 inTrain <- createDataPartition(y = trainData$classe, p = 0.7, list = FALSE)
 trainData.train <- trainData[inTrain, ]
-trainData.crossval <- trainData[-inTrain, ] 
+trainData.valid <- trainData[-inTrain, ] 
 ```
 
 ## Random Forest Analysis
@@ -112,11 +110,11 @@ The OOB (Out of Bag) estimate of 0.32% was deemed acceptable.
 This model was used on the cross validation data. This would help verify its accuracy.
 
 ```{r}
-predict.crossval <- predict(modFitRF, trainData.crossval)
-confusionMatrix(trainData.crossval$classe, predict.crossval)
+predict.crossval <- predict(modFitRF, trainData.valid)
+confusionMatrix(trainData.valid$classe, predict.crossval)
 ```
 
-The model returned a 99.7% pedicition accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.
+The model returned a 99.7% prediction accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.
 
 ### Predictions
 The model will be applied to the test data set loaded earlier.
@@ -127,7 +125,7 @@ predictTest
 ```
 
 ### Conclusions
-The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available. 
+The result shown above indicates that it is possible to predict how well a person is preforming an exercise using the sensors available. 
 
 ## Prediction Assignment Submission
 

@@ -59,7 +59,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 
 <p>Assignment</p>
-<p>The goal is this project is to predict the manner in which users of devices such as the <em>Jawbone Up</em>, <em>Nike FuelBand</em>, and <em>Fitbit</em> did exercise. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways was utilised. The data and further information about the source of this data was obtained from the website: [<a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>] (see the section on the Weight Lifting Exercise Dataset). The training and testing data were downloaded from [<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv</a>] and [<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a>] respectivley.</p>
+<p>The goal is this project is to predict the manner in which users of devices such as the <em>Jawbone Up</em>, <em>Nike FuelBand</em>, and <em>Fitbit</em> did exercise. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants who were asked to perform barbell lifts correctly and incorrectly in 5 different ways was utilised. The data and further information about the source of this data was obtained from the website: [<a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a>] (see the section on the Weight Lifting Exercise Dataset). The training and testing data were downloaded from [<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv</a>] and [<a href="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv">https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv</a>] respectively.</p>
 <p>The assignment is to create a report describing how the model was built, how cross validation was used, and the expected out of sample error. Also included are the choices that led to the conclusions.</p>
 <p>Getting and Cleaning Data</p>
 <pre class="r"><code>if (!file.exists(&quot;data&quot;)) {
@@ -99,11 +99,6 @@ library(caret)</code></pre>
 <pre class="r"><code>library(randomForest)</code></pre>
 <pre><code>## randomForest 4.6-10
 ## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<pre class="r"><code>library(rpart)
-library(rattle)</code></pre>
-<pre><code>## Rattle: A free graphical interface for data mining with R.
-## Version 3.3.0 Copyright (c) 2006-2014 Togaware Pty Ltd.
-## Type 'rattle()' to shake, rattle, and roll your data.</code></pre>
 </div>
 <div id="cleaning-the-data" class="section level1">
 <h1>Cleaning the data</h1>
@@ -182,7 +177,7 @@ confusionMatrix(trainData.crossval$classe, predict.crossval)</code></pre>
 ## Detection Rate         0.2843   0.1927   0.1725   0.1611   0.1839
 ## Detection Prevalence   0.2845   0.1935   0.1743   0.1638   0.1839
 ## Balanced Accuracy      0.9984   0.9942   0.9916   0.9984   0.9995</code></pre>
-<p>The model returned a 99.7% pedicition accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.</p>
+<p>The model returned a 99.7% prediction accuracy and a 99.6% Kappa coefficient. This seems to indicate that the model is adequate for prediction purposes.</p>
 <div id="predictions" class="section level3">
 <h3>Predictions</h3>
 <p>The model will be applied to the test data set loaded earlier.</p>
@@ -194,7 +189,7 @@ predictTest</code></pre>
 </div>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>
-<p>The result shown above indicates that it is possible to predict how well a person is preforming an excercise using the sensors available.</p>
+<p>The result shown above indicates that it is possible to predict how well a person is preforming an exercise using the sensors available.</p>
 </div>
 </div>
 <div id="prediction-assignment-submission" class="section level2">
